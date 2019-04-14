@@ -14,7 +14,7 @@ app.get('/', (req, res) => res.send('Hello World!'));
 app.get('/webhook', (req, res) => {
 
   // Токен верификации. Он должен быть строкой, состоящей из случайных символов
-  let VERIFY_TOKEN = "e1793c25a0ccbdcebd704af009c98b6c";
+  let VERIFY_TOKEN = "MY_BOT";
 
   // Разбор параметров запроса
   let mode = req.query['hub.mode'];
@@ -40,39 +40,22 @@ app.get('/webhook', (req, res) => {
 
 app.post('/webhook', (req, res) => {
 
-  let body = req.body;
+  let { body }= req;
 
-  console.log(0);
-  if (body.object === 'page') {
-    console.log(1);
-
-    //Перебор объектов, которых может быть несколько при пакетной передаче данных
-    body.entry.forEach(function(entry) {
-
-      // сущность entry.messaging является массивом, но
-      // тут будет лишь одно сообщение, поэтому используется индекс 0
-      let webhook_event = entry.messaging[0];
-      console.log(webhook_event);
-
-      // Получение PSID отправителя
-      let sender_psid = webhook_event.sender.id;
-      console.log('Sender PSID: ' + sender_psid);
-
-      // Проверка события, выяснение того, message это или postback,
-      // и передача события подходящей функции-обработчику
-      if (webhook_event.message) {
-        console.log(webhook_event.message)
-      } else if (webhook_event.postback) {
-        console.log(webhook_event.postback)
-      }
-    });
-
-    // Возврат '200 OK' в ответ на все запросы
-    res.status(200).send('EVENT_RECEIVED');
-  } else {
-    // Возврат '404 Not Found', если событие не относится к тем, на которые мы подписаны
-    res.sendStatus(422);
+  if (body.object !== 'page') {
+    res.sendStatus(404);
+    return;
   }
+
+
+  body.entry.forEach((entry) => {
+
+    let webhook_event = entry.messaging[0];
+    let sender_psid = webhook_event.sender.id;
+
+    res.status(200).send('EVENT_RECEIVED' + webhook_event.message.text);
+
+  });
 
 });
 
