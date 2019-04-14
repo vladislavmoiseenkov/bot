@@ -47,13 +47,25 @@ app.post('/webhook', (req, res) => {
     return;
   }
 
-
   body.entry.forEach((entry) => {
 
     let webhook_event = entry.messaging[0];
     let sender_psid = webhook_event.sender.id;
 
-    res.status(200).send('EVENT_RECEIVED' + webhook_event.message.text);
+    if (webhook_event.message) {
+      return res.status(200).send('Message: ' + webhook_event.message.text);
+    }
+
+    if (webhook_event.postback) {
+
+      switch (webhook_event.postback.payload) {
+        case 'get_start':
+          return res.status(200).send('Get start btn clicked');
+        default:
+          return res.status(200).send('Otherwise');
+
+      }
+    }
 
   });
 
