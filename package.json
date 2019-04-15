@@ -18,7 +18,7 @@
     "winston": "^3.2.1"
   },
   "scripts": {
-    "serve": "nodemon index.js",
+    "start": "nodemon index.js",
     "lint": "eslint index.js"
   },
   "engines": {
