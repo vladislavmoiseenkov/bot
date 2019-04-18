@@ -105,10 +105,9 @@ module.exports = {
         page: 1,
         pageSize: 7,
       });
-      console.log(JSON.stringify(products.products));
       return products.products;
     } catch (e) {
-      console.error(e);
+      console.error('error', e);
       return e;
     }
   },

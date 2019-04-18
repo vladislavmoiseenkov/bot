@@ -31,20 +31,27 @@ module.exports = {
                 await sendMessage(senderPsid, 'Hello, I\'m your main menu!');
                 return res.status(200).send('Click to "Open main menu button"');
               case 'OPEN_SHOP':
-                // eslint-disable-next-line
-                const products = await getProducts();
                 try {
+                // eslint-disable-next-line
+                  const products = await getProducts();
                   await sendList(senderPsid, products);
+                  return res.status(200).send(products);
                 } catch (e) {
                   console.error(e.response.data);
                 }
-                return res.status(200).send(products);
+                break;
               case 'OPEN_FAVOURITES':
                 try {
                   await UserFavourites.findOne(
                     { userId: +senderPsid },
                     (err, favourites) => {
                       if (err) return console.error(err);
+
+                      if (!favourites) {
+                        return res.status(200).send({
+                          message: 'Favourites',
+                        });
+                      }
 
                       sendList(+senderPsid, favourites.products, true);
                     },
@@ -54,8 +61,10 @@ module.exports = {
                   });
                 } catch (e) {
                   console.error('error', e);
+                  return res.status(500).send({
+                    message: e,
+                  });
                 }
-                break;
               default:
                 await sendMessage(senderPsid, 'Under construction');
                 return res.status(200).send('');
@@ -74,11 +83,21 @@ module.exports = {
 
           switch (payload[PAYLOAD_NAME_INDEX]) {
             case 'GET_STARTED':
-              await sendMessage(senderPsid, 'Main menu', MAIN_MENU_BTN);
-              return res.status(200).send('Get start btn clicked');
+              try {
+                await sendMessage(senderPsid, 'Main menu', MAIN_MENU_BTN);
+                return res.status(200).send('Get start btn clicked');
+              } catch (e) {
+                console.error(e);
+                return res.status(500).send(e);
+              }
             case 'MAIN_MENU_PAYLOAD':
-              await sendMessage(senderPsid, 'Main menu', MAIN_MENU_BTN);
-              return res.status(200).send('Main menu opened');
+              try {
+                await sendMessage(senderPsid, 'Main menu', MAIN_MENU_BTN);
+                return res.status(200).send('Main menu opened');
+              } catch (e) {
+                console.error(e);
+                return res.status(500).send(e);
+              }
             case 'ADD_TO_FAVOURITES':
               const productById = await getProductById(payload[1]);
 
@@ -96,7 +115,6 @@ module.exports = {
                   err => console.error(err),
                 );
 
-                console.log(UserFavourites);
                 return res.status(200).send({
                   message: 'Add to favourites',
                 });
@@ -104,6 +122,7 @@ module.exports = {
 
               // console.log('userFavoritesModel.products', userFavoritesModel.products);
 
+              // eslint-disable-next-line
               const product = userFavoritesModel.products.find(_product => +_product.sku === +payload[1]);
               if (!product) {
                 await UserFavourites.updateOne(
