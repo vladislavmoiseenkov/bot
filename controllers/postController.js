@@ -102,9 +102,11 @@ module.exports = {
                 try {
                   const userPurchase = await UserPurchase.findOne({ userId: senderPsid });
 
-                  // console.log([...purchase]);
-
-                  await sendList(senderPsid, userPurchase.products, false, false);
+                  if (!userPurchase) {
+                    await sendMessage(senderPsid, 'No items in purchase', null);
+                  } else {
+                    await sendList(senderPsid, userPurchase.products, false, false);
+                  }
 
                   return res.status(200).send({ message: 'Purchases' });
                 } catch (e) {
