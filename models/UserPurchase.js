@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
-const { Schema } = mongoose.Schema;
+const { Schema } = mongoose;
 
 const userPurchase = new Schema({
-  userId: Schema.ObjectId,
+  userId: Number,
   products: [],
 });
 
-mongoose.model('UserPurchase', userPurchase);
+module.exports = mongoose.model('UserPurchase', userPurchase);

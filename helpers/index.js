@@ -26,7 +26,7 @@ module.exports = {
     return axios.post(`${FACEBOOK_API_URL}/messages?access_token=${PAGE_TOKEN}`, data);
   },
 
-  async sendList(recipientId, products, favourites = false) {
+  async sendList(recipientId, products, favourites = false, viewMore = false) {
     const data = {
       recipient: {
         id: recipientId,
@@ -59,7 +59,40 @@ module.exports = {
               {
                 type: 'postback',
                 title: 'View more',
-                payload: 'VIEW_MORE',
+                payload: `VIEW_MORE:${product.sku}`,
+              },
+              {
+                type: 'postback',
+                title: 'Buy',
+                payload: `BUY:${product.sku}`,
+              },
+            ],
+          },
+        );
+      }
+    } else if (viewMore) {
+      for (const product of products) {
+        data.message.attachment.payload.elements.push(
+          {
+            title: product.name,
+            image_url: product.image,
+            default_action: {
+              type: 'web_url',
+              url: product.image,
+              messenger_extensions: true,
+              webview_height_ratio: 'tall',
+              fallback_url: product.image,
+            },
+            buttons: [
+              {
+                type: 'postback',
+                title: 'Add to favourites',
+                payload: `ADD_TO_FAVOURITES:${product.sku}`,
+              },
+              {
+                type: 'postback',
+                title: 'Buy',
+                payload: `BUY:${product.sku}`,
               },
             ],
           },
@@ -81,18 +114,19 @@ module.exports = {
             buttons: [
               {
                 type: 'postback',
-                title: 'Add to favourites',
-                payload: `ADD_TO_FAVOURITES:${product.sku}`,
-              },
-              {
-                type: 'postback',
                 title: 'View more',
-                payload: 'VIEW_MORE',
+                payload: `VIEW_MORE:${product.sku}`,
               },
             ],
           },
         );
       }
+    }
+
+    if (data.message.attachment.payload.elements.length > 10) {
+      // eslint-disable-next-line
+      data.message.attachment.payload.elements.splice(0, data.message.attachment.payload.elements.length - 10);
+      data.message.attachment.payload.elements.reverse();
     }
 
     return axios.post(`${FACEBOOK_API_URL}/messages?access_token=${PAGE_TOKEN}`, data);
@@ -142,6 +176,16 @@ module.exports = {
       content_type: 'text',
       title: 'To invite a friend',
       payload: 'INVITE_FRIEND',
+    },
+  ],
+  LOCATION: [
+    {
+      content_type: 'location',
+    },
+  ],
+  PHONE: [
+    {
+      content_type: 'user_phone_number',
     },
   ],
 };
