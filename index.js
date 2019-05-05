@@ -24,9 +24,11 @@ db.once('open', () => {
 
 const app = express();
 
+app.set('PORT', PORT);
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 require('./router')(app);
 
-app.listen(PORT, () => console.log(`Server start on port: ${PORT}`));
+app.listen(app.get('PORT'), () => console.log(`Server start on port: ${PORT}`));
