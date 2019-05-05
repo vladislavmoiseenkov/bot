@@ -12,13 +12,13 @@ module.exports = {
       if (mode && token) {
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
           console.log('WEBHOOK_VERIFIED');
-          res.status(200).send(challenge);
-        } else {
-          res.sendStatus(403);
+          return res.status(200).send(challenge);
         }
+        return res.sendStatus(403);
       }
     } catch (e) {
       console.error(e);
+      return res.status(200).send(e);
     }
   },
 };
