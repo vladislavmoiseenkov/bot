@@ -8,6 +8,7 @@ const
     LOCATION,
     PHONE,
   } = require('../helpers');
+
 const UserFavourites = require('../models/UserFavourites');
 const UserPurchase = require('../models/UserPurchase');
 
