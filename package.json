@@ -21,6 +21,7 @@
   },
   "scripts": {
     "start": "nodemon index.js",
+    "local-start": "nodemon index.js --dev",
     "lint": "eslint index.js"
   },
   "engines": {

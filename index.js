@@ -2,8 +2,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const env = require('node-env-file');
 const mongoose = require('mongoose');
-// eslint-disable-next-line
-env(__dirname + '/.env');
+
+if (process.argv.indexOf('--dev') !== -1) {
+  // eslint-disable-next-line
+  env(__dirname + '/.env');
+}
 
 const {
   PORT,
@@ -24,11 +27,9 @@ db.once('open', () => {
 
 const app = express();
 
-app.set('PORT', PORT);
-
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 require('./router')(app);
 
-app.listen(app.get('PORT'), () => console.log(`Server start on port: ${PORT}`));
+app.listen(PORT, () => console.log(`Server start on port: ${PORT}`));
