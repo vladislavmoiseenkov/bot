@@ -1,3 +1,4 @@
+const { CronJob } = require('cron');
 const
   {
     sendMessage,
@@ -8,6 +9,7 @@ const
     LOCATION,
     PHONE,
   } = require('../helpers');
+
 
 const UserFavourites = require('../models/UserFavourites');
 const UserPurchase = require('../models/UserPurchase');
@@ -121,6 +123,17 @@ module.exports = {
           if (webhookEvent.message.attachments) {
             // eslint-disable-next-line
             sendMessage(senderPsid, 'Our courier will contact you within 2 hours', null);
+
+
+            console.log('Before job instantiation');
+            const date = new Date();
+            date.setMinutes(date.getMinutes() + 1);
+            const job = new CronJob(date, () => {
+              sendMessage(senderPsid, 'Test');
+            });
+            console.log('After job instantiation');
+            job.start();
+
             return res.status(200).send({
               message: 'webhookEvent.message.attachment',
             });
@@ -212,30 +225,38 @@ module.exports = {
             case 'BUY':
               try {
                 // eslint-disable-next-line
-                const productById = await getProductById(payload[1]);
-
-                // eslint-disable-next-line
+                let productById = await getProductById(payload[1]);
+                //
+                // // eslint-disable-next-line
                 const userPurchaseModel = await UserPurchase.findOne(
                   { userId: senderPsid },
                   err => console.error(err),
                 );
 
                 if (!userPurchaseModel) {
-                  await UserPurchase.create(
-                    {
-                      userId: senderPsid,
-                      products: [...productById],
-                    },
-                    err => console.error(err),
-                  );
+                  try {
+                    productById.purchaseId = 1;
+                    await UserPurchase.create(
+                      {
+                        userId: senderPsid,
+                        products: [...productById],
+                      },
+                      err => console.error(err),
+                    );
+                  } catch (e) {
+                    console.error('qqqqqqqqqqqqqqqqqqqqq', e);
+                    return false;
+                  }
                 } else {
                   try {
+                    productById.purchaseId = userPurchaseModel.products.length + 1;
+
                     await UserPurchase.updateOne(
                       { userId: senderPsid },
                       { $push: { products: productById } },
                     );
                   } catch (e) {
-                    console.error('e', e);
+                    console.error('eeeeeeeeeeeeeeeeeeeeeee', e);
                   }
                 }
 
@@ -244,6 +265,18 @@ module.exports = {
                 return res.status(200).send({
                   message: 'Bought',
                 });
+              } catch (e) {
+                console.error(e);
+                return res.status(500).send(e);
+              }
+            case 'CATALOG_PAYLOAD':
+              try {
+                // eslint-disable-next-line
+                const products = await getProducts();
+
+                await sendList(senderPsid, products);
+
+                return res.status(200).send(products);
               } catch (e) {
                 console.error(e);
                 return res.status(500).send(e);

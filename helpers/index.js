@@ -10,20 +10,25 @@ const bby = require('bestbuy')(BEST_BUY_API_KEY);
 
 module.exports = {
   async sendMessage(recipientId, msgText, quickRepliesBtns = null) {
-    const data = {
-      recipient: {
-        id: recipientId,
-      },
-      message: {
-        text: msgText,
-      },
-    };
+    try {
+      const data = {
+        recipient: {
+          id: recipientId,
+        },
+        message: {
+          text: msgText,
+        },
+      };
 
-    if (quickRepliesBtns) {
-      data.message.quick_replies = quickRepliesBtns;
+      if (quickRepliesBtns) {
+        data.message.quick_replies = quickRepliesBtns;
+      }
+
+      return axios.post(`${FACEBOOK_API_URL}/messages?access_token=${PAGE_TOKEN}`, data);
+    } catch (e) {
+      console.error('e', e);
+      return e;
     }
-
-    return axios.post(`${FACEBOOK_API_URL}/messages?access_token=${PAGE_TOKEN}`, data);
   },
 
   async sendList(recipientId, products, favourites = false, viewMore = false) {
