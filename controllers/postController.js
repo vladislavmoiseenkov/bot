@@ -59,8 +59,10 @@ module.exports = {
                   return res.status(200).send(products);
                 } catch (e) {
                   console.error(e.response.data);
+                  return res.status(500).send({
+                    message: e,
+                  });
                 }
-                break;
               case 'OPEN_FAVOURITES':
                 try {
                   await UserFavourites.findOne(
