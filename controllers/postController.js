@@ -65,20 +65,23 @@ module.exports = {
                 }
               case 'OPEN_FAVOURITES':
                 try {
-                  await UserFavourites.findOne(
+                  const favourites = await UserFavourites.findOne(
                     { userId: +senderPsid },
-                    (err, favourites) => {
+                    async (err) => {
                       if (err) return console.error(err);
-
-                      if (!favourites) {
-                        return res.status(200).send({
-                          message: 'Favourites',
-                        });
-                      }
-
-                      sendList(+senderPsid, favourites.products, true);
                     },
                   );
+
+                  if (!favourites) {
+                    await sendMessage(senderPsid, 'No items!');
+
+                    return res.status(200).send({
+                      message: 'Favourites',
+                    });
+                  }
+
+                  sendList(+senderPsid, favourites.products, true);
+
                   return res.status(200).send({
                     message: 'Favourites',
                   });
@@ -114,7 +117,13 @@ module.exports = {
                 try {
                   const userPurchase = await UserPurchase.findOne({ userId: senderPsid });
 
-                  // console.log([...purchase]);
+                  if (!userPurchase) {
+                    await sendMessage(senderPsid, 'No items!');
+
+                    return res.status(200).send({
+                      message: 'Favourites',
+                    });
+                  }
 
                   await sendList(senderPsid, userPurchase.products, false, false);
 
@@ -140,7 +149,7 @@ module.exports = {
                     return res.status(404).send('Not Found!');
                   }
 
-                  let { products } = purchases;
+                  const { products } = purchases;
 
                   products.forEach((product) => {
                     if (+product.purchaseId === +qrPayload[1]) {
