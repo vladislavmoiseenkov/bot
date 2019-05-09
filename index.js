@@ -2,8 +2,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const env = require('node-env-file');
 const mongoose = require('mongoose');
-// eslint-disable-next-line
-env(__dirname + '/.env');
+
+if (process.argv.indexOf('--dev') !== -1) {
+  // eslint-disable-next-line
+  env(__dirname + '/.env');
+}
 
 const {
   PORT,
@@ -18,7 +21,8 @@ const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', () => {
   console.log('connect success');
-  // db.collections['userfavourites'].deleteMany({});
+  db.collections['userfavourites'].deleteMany({});
+  db.collections['userpurchases'].deleteMany({});
   // console.log('db.collections', db.collections['userfavourites']);
 });
 

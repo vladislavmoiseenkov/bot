@@ -1,3 +1,4 @@
+const { CronJob } = require('cron');
 const
   {
     sendMessage,
@@ -7,7 +8,9 @@ const
     MAIN_MENU_BTN,
     LOCATION,
     PHONE,
+    RATE_BTN,
   } = require('../helpers');
+
 
 const UserFavourites = require('../models/UserFavourites');
 const UserPurchase = require('../models/UserPurchase');
@@ -38,7 +41,13 @@ module.exports = {
               webhookEvent.message.quick_reply.payload = 'PHONE';
             }
 
-            switch (webhookEvent.message.quick_reply.payload) {
+            let qrPayload = [webhookEvent.message.quick_reply.payload];
+
+            if (qrPayload[0].indexOf(':') !== -1) {
+              qrPayload = qrPayload[0].split(':');
+            }
+
+            switch (qrPayload[0]) {
               case 'OPEN_MAIN_MENU':
                 await sendMessage(senderPsid, 'Hello, I\'m your main menu!');
                 return res.status(200).send('Click to "Open main menu button"');
@@ -103,13 +112,50 @@ module.exports = {
                 try {
                   const userPurchase = await UserPurchase.findOne({ userId: senderPsid });
 
-                  if (!userPurchase) {
-                    await sendMessage(senderPsid, 'No items in purchase', null);
-                  } else {
-                    await sendList(senderPsid, userPurchase.products, false, false);
-                  }
+                  // console.log([...purchase]);
+
+                  await sendList(senderPsid, userPurchase.products, false, false);
 
                   return res.status(200).send({ message: 'Purchases' });
+                } catch (e) {
+                  console.error(e);
+                  return res.status(500).send(e);
+                }
+              case '1':
+              case '2':
+              case '3':
+              case '4':
+              case '5':
+              case '6':
+              case '7':
+              case '8':
+              case '9':
+              case '10':
+                try {
+                  const purchases = await UserPurchase.findOne({ userId: senderPsid });
+
+                  if (!purchases) {
+                    return res.status(404).send('Not Found!');
+                  }
+
+                  let { products } = purchases;
+
+                  products.forEach((product) => {
+                    if (+product.purchaseId === +qrPayload[1]) {
+                      product.rate = +qrPayload[0];
+                    }
+                  });
+
+                  await UserPurchase.findOneAndUpdate(
+                    { userId: senderPsid },
+                    { $set: { products } },
+                  );
+
+                  await sendMessage(senderPsid, 'Thank you!');
+
+                  return res.status(200).send({
+                    message: 'Voted',
+                  });
                 } catch (e) {
                   console.error(e);
                   return res.status(500).send(e);
@@ -121,10 +167,40 @@ module.exports = {
           }
 
           if (webhookEvent.message.attachments) {
+            const lastUserPurchase = await UserPurchase.findOne(
+              { userId: senderPsid },
+            );
+
+            const { coordinates } = webhookEvent.message.attachments[0].payload;
+
+
+            // eslint-disable-next-line
+            lastUserPurchase.products[lastUserPurchase.products.length - 1].coordinates = coordinates;
+
+            // eslint-disable-next-line
+            const purchaseId = lastUserPurchase.products[lastUserPurchase.products.length - 1].purchaseId;
+
+            await UserPurchase.findOneAndUpdate(
+              { userId: senderPsid },
+              { $set: { products: lastUserPurchase.products } },
+            );
+
+
             // eslint-disable-next-line
             sendMessage(senderPsid, 'Our courier will contact you within 2 hours', null);
+
+            const date = new Date();
+            date.setDate(date.getDate() + 2);
+            const job = new CronJob(date, () => {
+              sendMessage(senderPsid,
+                'Please tell me, did you like the product? How do you estimate, recommend our product to your friends?',
+                RATE_BTN, purchaseId);
+            });
+
+            job.start();
+
             return res.status(200).send({
-              message: 'webhookEvent.message.attachment',
+              message: 'Location Saved!',
             });
           }
 
@@ -163,7 +239,7 @@ module.exports = {
               // eslint-disable-next-line
               const userFavoritesModel = await UserFavourites.findOne(
                 { userId: senderPsid }, (err) => {
-                  if (err) return console.log(err);
+                  if (err) return console.error(err);
                 },
               );
 
@@ -173,7 +249,7 @@ module.exports = {
                     userId: senderPsid,
                     products: [...productById],
                   }, (err) => {
-                    if (err) return console.log(err);
+                    if (err) return console.error(err);
                   },
                 );
 
@@ -219,22 +295,28 @@ module.exports = {
                 // eslint-disable-next-line
                 const userPurchaseModel = await UserPurchase.findOne(
                   { userId: senderPsid },
-                  err => console.error(err),
+                  (err) => { if (err) console.error(err); },
                 );
 
+                const productPurchased = { ...productById[0] };
+
                 if (!userPurchaseModel) {
+                  productPurchased.purchaseId = 1;
                   await UserPurchase.create(
                     {
                       userId: senderPsid,
-                      products: [...productById],
+                      products: [productPurchased],
                     },
-                    err => console.error(err),
+                    (err) => {
+                      if (err) return console.error(err);
+                    },
                   );
                 } else {
                   try {
+                    productPurchased.purchaseId = userPurchaseModel.products.length + 1;
                     await UserPurchase.updateOne(
                       { userId: senderPsid },
-                      { $push: { products: productById } },
+                      { $push: { products: productPurchased } },
                     );
                   } catch (e) {
                     console.error('e', e);
@@ -250,6 +332,18 @@ module.exports = {
                 console.error(e);
                 return res.status(500).send(e);
               }
+            case 'CATALOG_PAYLOAD':
+              try {
+                // eslint-disable-next-line
+                const products = await getProducts();
+
+                await sendList(senderPsid, products);
+
+                return res.status(200).send(products);
+              } catch (e) {
+                console.error(e);
+                return res.status(500).send(e);
+              }
             default:
               return res.status(200).send('Otherwise');
           }
@@ -257,6 +351,8 @@ module.exports = {
       });
     } catch (e) {
       console.error(e);
+      // eslint-disable-next-line
+      return res.status(500).send(e);
     }
   },
 };
