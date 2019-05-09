@@ -9,7 +9,7 @@ const {
 const bby = require('bestbuy')(BEST_BUY_API_KEY);
 
 module.exports = {
-  async sendMessage(recipientId, msgText, quickRepliesBtns = null) {
+  async sendMessage(recipientId, msgText, quickRepliesBtns = null, purchaseId = null) {
     try {
       const data = {
         recipient: {
@@ -22,6 +22,12 @@ module.exports = {
 
       if (quickRepliesBtns) {
         data.message.quick_replies = quickRepliesBtns;
+      }
+
+      if (purchaseId) {
+        data.message.quick_replies.forEach((button) => {
+          button.payload = `${button.payload}:${purchaseId}`;
+        });
       }
 
       return axios.post(`${FACEBOOK_API_URL}/messages?access_token=${PAGE_TOKEN}`, data);
@@ -181,6 +187,58 @@ module.exports = {
       content_type: 'text',
       title: 'To invite a friend',
       payload: 'INVITE_FRIEND',
+    },
+  ],
+  RATE_BTN: [
+    {
+      content_type: 'text',
+      title: '1',
+      payload: '1',
+    },
+    {
+      content_type: 'text',
+      title: '2',
+      payload: '2',
+    },
+    {
+      content_type: 'text',
+      title: '3',
+      payload: '3',
+    },
+    {
+      content_type: 'text',
+      title: '4',
+      payload: '4',
+    },
+    {
+      content_type: 'text',
+      title: '5',
+      payload: '5',
+    },
+    {
+      content_type: 'text',
+      title: '6',
+      payload: '6',
+    },
+    {
+      content_type: 'text',
+      title: '7',
+      payload: '7',
+    },
+    {
+      content_type: 'text',
+      title: '8',
+      payload: '8',
+    },
+    {
+      content_type: 'text',
+      title: '9',
+      payload: '9',
+    },
+    {
+      content_type: 'text',
+      title: '10',
+      payload: '10',
     },
   ],
   LOCATION: [
